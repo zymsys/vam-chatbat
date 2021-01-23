@@ -1,0 +1,16 @@
+<root version="2.0">
+    <properties>
+        <name>Vam's ChatBat - Chat comBat</name>
+        <version>0.1</version>
+
+        <author>Vic Metcalfe</author>
+        <description>Vam's ChatBat - Chat comBat</description>
+        <loadorder>100</loadorder>
+    </properties>
+
+    <announcement text="Vam's ChatBat - Chat comBat" />
+
+    <base>
+        <script name="VamChatBat" file="scripts/vam_chatbat.lua" />
+    </base>
+</root>
