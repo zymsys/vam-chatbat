@@ -1,7 +1,7 @@
 <root version="2.0">
     <properties>
         <name>Vam's ChatBat - Chat comBat</name>
-        <version>0.1</version>
+        <version>0.2</version>
 
         <author>Vic Metcalfe</author>
         <description>Vam's ChatBat - Chat comBat</description>
@@ -12,5 +12,8 @@
 
     <base>
         <script name="VamChatBat" file="scripts/vam_chatbat.lua" />
+        <script name="VamChatBatUtil" file="scripts/vam_chatbat_util.lua" />
+        <script name="VamChatBatTargeting" file="scripts/vam_chatbat_targeting.lua" />
+        <script name="VamChatBatAction" file="scripts/vam_chatbat_action.lua" />
     </base>
 </root>
