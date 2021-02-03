@@ -1,4 +1,5 @@
 selectedAction = nil
+selectedActionActor = nil
 
 function takeAction(aWords)
     local nCreature = VamChatBatUtil.actionNode()
@@ -7,6 +8,13 @@ function takeAction(aWords)
     else
         VamChatBatUtil.sendLocalChat("No active creature")
     end
+end
+
+-- Mage Hand for example has a name but no actual actions.
+-- Let's filter things that don't contain actions out of the list.
+
+function dumpAction(aWords)
+    Debug.chat(findAction(aWords, getAvailableActions(VamChatBatUtil.actionNode())))
 end
 
 function performWeaponAttack(nWeapon)
@@ -24,11 +32,16 @@ function actionSetFromPower(rPower)
     local aActionNodes = DB.getChildren(rPower['actions'])
     for _,v in pairs(aActionNodes) do
         local rAction, rActor = PowerManager.getPCPowerAction(v)
+        local type = rAction['type']
         rActionNodes = DB.getChildren(v)
-        if rAction['type'] == 'cast' then
-            rActionSet['rAttackRoll'] = ActionAttack.getRoll(rActor, rAction)
-        elseif rAction['type'] == 'damage' then
-            rActionSet['rDamageRoll'] = ActionDamage.getRoll(rActor, rAction)
+        if type == 'cast' then
+            rActionSet['rAttackAction'] = rAction
+        elseif type == 'damage' then
+            rActionSet['rDamageAction'] = rAction
+        elseif type == 'effect' then
+            rActionSet['rEffectAction'] = rAction
+        elseif type == 'heal' then
+            rActionSet['rHealAction'] = rAction
         else
             Debug.chat("Need to add action handler for", rAction)
         end
@@ -40,13 +53,11 @@ end
 -- Might need to do something like this when the user takes the action...
 --CharWeaponManager.decrementAmmo(nodeChar, nodeWeapon);
 function actionSetFromWeapon(nCreature, nWeapon)
-    local rActor = ActorManager.resolveActor(nCreature)
-    local rAttackAction = CharWeaponManager.buildAttackAction(nCreature, nWeapon);
-    local rDamageAction = CharWeaponManager.buildDamageAction(nodeChar, nodeWeapon);
+    local rAttackAction = CharWeaponManager.buildAttackAction(nCreature, nWeapon)
     return {
         sName = rAttackAction['label'] .. ' (' .. rAttackAction['range'] .. ')',
-        rAttackRoll = ActionAttack.getRoll(rActor, rAttackAction),
-        rDamageRoll = ActionDamage.getRoll(rActor, rDamageAction),
+        rAttackAction = rAttackAction,
+        rDamageAction = CharWeaponManager.buildDamageAction(nodeChar, nodeWeapon),
     }
 end
 
@@ -70,24 +81,46 @@ function weaponActionsForCreature(aWeapons)
 end
 
 function actionSetFromAttackLine(rAttack)
-    local rActionSet = {}
+    local rActionSet = { sName = rAttack.name }
     local aAbilities = rAttack['aAbilities']
-    for _, rAbility in pairs(aAbilities) do
-        rActionSet['sName'] = rAbility.label .. ' (' .. rAbility.range .. ')'
-        if rAbility['sType'] == 'attack' then
-            rActionSet['rAttackRoll'] = ActionAttack.getRoll(rActor, rAbility)
-        elseif rAbility['sType'] == 'damage' then
-            rActionSet['rDamageRoll'] = ActionDamage.getRoll(rActor, rAbility)
+    for _, rAction in pairs(aAbilities) do
+        local type = rAction.sType
+        rActionSet.sName = rActionSet.sName or rAction.label or rAction.sName or rAction.sType
+        --Can't I just use an array of actions here, other than for damage?
+        --Speaking of which, can there be more than one damage action? What would that mean?
+        if type == 'attack' then
+            if rAction.range then
+                rActionSet.sName = rActionSet.sName .. ' (' .. rAction.range .. ')'
+            end
+            rActionSet['rAttackAction'] = rAction
+        elseif type == 'damage' then
+            rActionSet['rDamageAction'] = rAction
+        elseif type == 'effect' then
+            rActionSet['rEffectAction'] = rAction
+        elseif type == 'powersave' then
+            rActionSet['rSaveAction'] = rAction
+        elseif type == 'heal' then
+            rActionSet['rHealAction'] = rAction
         else
-            Debug.chat("Need to add NPC action handler for", rAbility)
+            Debug.chat("Need to add NPC action handler for", rAction)
         end
     end
     return rActionSet
 end
 
 function npcActionsForCreature(aActions)
-    local aAvailableActions = {}
+    local aAvailableActions = { sName = 'action' }
     for _, action in pairs(aActions) do
+        local sAttack = DB.getValue(action, "value", "")
+        local rAttack = CombatManager2.parseAttackLine(sAttack)
+        table.insert(aAvailableActions, actionSetFromAttackLine(rAttack))
+    end
+    return aAvailableActions
+end
+
+function npcSpellsForCreature(aSpells)
+    local aAvailableActions = {}
+    for _, action in pairs(aSpells) do
         local sAttack = DB.getValue(action, "value", "")
         local rAttack = CombatManager2.parseAttackLine(sAttack)
         table.insert(aAvailableActions, actionSetFromAttackLine(rAttack))
@@ -98,7 +131,11 @@ end
 function summarizeActions(rActor, aActions)
     VamChatBatUtil.sendLocalChat("Actions for " .. rActor['sName'])
     for index, rAction in pairs(aActions) do
-        VamChatBatUtil.sendLocalChat(index .. ': ' .. rAction['sName'])
+        if rAction.sName then
+            VamChatBatUtil.sendLocalChat(index .. ': ' .. rAction['sName'])
+        else
+            Debug.chat(index, rAction)
+        end
     end
 end
 
@@ -121,7 +158,7 @@ function findAction(aWords, aActions)
     end
 end
 
-function attackFrom(nCT, aWords)
+function getAvailableActions(nCT)
     local rActor = ActorManager.resolveActor(nCT)
     local nCreature = DB.findNode(rActor['sCreatureNode'])
     local rCreatureNodes = DB.getChildren(nCreature)
@@ -130,16 +167,54 @@ function attackFrom(nCT, aWords)
     local aPowerActions = powerActionsForCreature(DB.getChildren(rCreatureNodes['powers']))
     local aWeaponActions = weaponActionsForCreature(DB.getChildren(rCreatureNodes['weaponlist']))
     local aNPCActions = npcActionsForCreature(DB.getChildren(nCT, 'actions'))
+    local aNPCSpells = npcSpellsForCreature(DB.getChildren(nCT, 'spells'))
 
     -- Merge them into one list
-    local aAvailableActions = VamChatBatUtil.tableConcat(VamChatBatUtil.tableConcat(aPowerActions, aWeaponActions), aNPCActions)
+    local aAllActions = VamChatBatUtil.tableConcat(
+        VamChatBatUtil.tableConcat(aPowerActions, aWeaponActions),
+        VamChatBatUtil.tableConcat(aNPCActions, aNPCSpells)
+    )
+
+    -- Filter out actions that have a name only, but no actionable items
+    return VamChatBatUtil.arrayFilter(aAllActions, function (v)
+        return VamChatBatUtil.tableLength(v) > 1
+    end)
+end
+
+function attackFrom(nCT, aWords)
+    local rActor = ActorManager.resolveActor(nCT)
+    local aAvailableActions = getAvailableActions(nCT)
 
     if #aWords == 1 then
         summarizeActions(rActor, aAvailableActions)
     else
         selectedAction = findAction(aWords, aAvailableActions)
+        selectedActionActor = rActor
         if selectedAction ~= nil then
-            ActionsManager.performAction(nil, rActor, selectedAction['rAttackRoll'])
+            VamChatBatUtil.sendPublicChat(selectedAction.sName, rActor.sName)
+            local bDidNothing = true
+            if selectedAction.rSaveAction then
+                ActionPower.performSaveVsRoll(nil, rActor, selectedAction.rSaveAction)
+                bDidNothing = false
+            end
+            if selectedAction.rEffectAction then
+                ActionEffect.performRoll(nil, rActor, selectedAction.rEffectAction)
+                bDidNothing = false
+            end
+            if selectedAction.rAttackAction then
+                ActionAttack.performRoll(nil, rActor, selectedAction.rAttackAction)
+                bDidNothing = false
+            end
+            if selectedAction.rHealAction then
+                ActionHeal.performRoll(nil, rActor, selectedAction.rHealAction)
+                bDidNothing = false
+            end
+            if selectedAction.rDamageAction and bDidNothing then
+                -- If all we had to do was deal damage, then go for it
+                ActionDamage.performRoll(nil, selectedActionActor, selectedAction.rDamageAction)
+                -- But don't then allow additional follow up damage
+                selectedAction = nil
+            end
         else
             VamChatBatUtil.sendLocalChat("No active creature, or no such action")
         end
@@ -147,9 +222,8 @@ function attackFrom(nCT, aWords)
 end
 
 function followUpDamage()
-    if selectedAction and selectedAction.rDamageRoll then
-        local rActor = ActorManager.resolveActor(nCT)
-        ActionsManager.performAction(nil, rActor, selectedAction['rDamageRoll'])
+    if selectedAction and selectedAction.rDamageAction then
+        ActionDamage.performRoll(nil, selectedActionActor, selectedAction.rDamageAction)
     else
         VamChatBatUtil.sendLocalChat("Attack with ChatBat before damage")
     end

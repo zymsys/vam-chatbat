@@ -1,8 +1,3 @@
--- Add a way to reset the combat tracker after an encounter
--- Undo damage?
--- Different attack and cast commands
--- Check use of chat and whisper as much as possible
-
 -- How do I find the best actor to target from as a player?
 -- From effect.lua:
 --if User.isHost() then
@@ -39,6 +34,23 @@ function processCommand(_, sParams)
     end
 end
 
+-- This is a secret command that is used during development to just hold some code
+-- and execute it to see what it does. It is not intended for end user consumption.
+function bobo()
+    local nCT = VamChatBatUtil.actionNode()
+    local rActor = ActorManager.resolveActor(nCT)
+    local rAction = {
+        nEnd = 55,
+        magic = TRUE,
+        label = 'Light - cantrip (at will)',
+        sType = 'powersave',
+        save = 'dexterity',
+        savemod = 0,
+        nStart = 28
+    }
+    ActionPower.performSaveVsRoll(nil, rActor, rAction)
+end
+
 function processChatBatCommand(sCommand)
     local aWords = StringManager.split(sCommand, ' ', true)
     if aWords[1] == 'a' then
@@ -53,6 +65,10 @@ function processChatBatCommand(sCommand)
         VamChatBatTargeting.clearTargets()
     elseif aWords[1] == 't' then
         VamChatBatTargeting.autoTarget(aWords[2], aWords[3])
+    elseif aWords[1] == 'dump' then
+        VamChatBatAction.dumpAction(aWords)
+    elseif aWords[1] == 'bobo' then
+        bobo()
     else
         VamChatBatUtil.sendLocalChat("Unknown command: " .. aWords[1])
         showHelp()

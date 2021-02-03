@@ -22,6 +22,26 @@ function tableConcat(t1,t2)
     return t1
 end
 
+function tableLength(t)
+    local c = 0
+    for _ in pairs(t) do
+        c = c + 1
+    end
+    return c
+end
+
+function arrayFilter(t,fn)
+    local r = {}
+    local i = 1
+    for _,v in pairs(t) do
+        if fn(v) then
+            r[i] = v
+            i = i + 1
+        end
+    end
+    return r
+end
+
 -- Determine which node to act upon
 function actionNode()
     if User.isHost() then
@@ -33,6 +53,14 @@ end
 
 function sendLocalChat(msg)
     Comm.addChatMessage({text = msg})
+end
+
+function sendPublicChat(msg, who)
+    local chat = {text = msg}
+    if who then
+        chat.sender = who
+    end
+    Comm.deliverChatMessage(chat)
 end
 
 -- For debugging
