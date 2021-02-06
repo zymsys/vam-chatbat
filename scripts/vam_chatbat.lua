@@ -21,6 +21,7 @@ function showHelp()
     VamChatBatUtil.sendLocalChat("/cb m  ## Memorize targets")
     VamChatBatUtil.sendLocalChat("/cb r  ## Restore targets")
     VamChatBatUtil.sendLocalChat("/cb t {faction} {count}  ## Auto-target")
+    VamChatBatUtil.sendLocalChat("/cb t r {radius}  ## Target by radius, ignoring faction")
     VamChatBatUtil.sendLocalChat("/cb {action}, {action}, {etc}  ## Multiple actions are separated by a comma")
 end
 

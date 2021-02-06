@@ -57,7 +57,7 @@ function actionSetFromWeapon(nCreature, nWeapon)
     return {
         sName = rAttackAction['label'] .. ' (' .. rAttackAction['range'] .. ')',
         rAttackAction = rAttackAction,
-        rDamageAction = CharWeaponManager.buildDamageAction(nodeChar, nodeWeapon),
+        rDamageAction = CharWeaponManager.buildDamageAction(nodeChar, nWeapon),
     }
 end
 
@@ -86,8 +86,6 @@ function actionSetFromAttackLine(rAttack)
     for _, rAction in pairs(aAbilities) do
         local type = rAction.sType
         rActionSet.sName = rActionSet.sName or rAction.label or rAction.sName or rAction.sType
-        --Can't I just use an array of actions here, other than for damage?
-        --Speaking of which, can there be more than one damage action? What would that mean?
         if type == 'attack' then
             if rAction.range then
                 rActionSet.sName = rActionSet.sName .. ' (' .. rAction.range .. ')'
@@ -131,11 +129,7 @@ end
 function summarizeActions(rActor, aActions)
     VamChatBatUtil.sendLocalChat("Actions for " .. rActor['sName'])
     for index, rAction in pairs(aActions) do
-        if rAction.sName then
-            VamChatBatUtil.sendLocalChat(index .. ': ' .. rAction['sName'])
-        else
-            Debug.chat(index, rAction)
-        end
+        VamChatBatUtil.sendLocalChat(index .. ': ' .. rAction['sName'])
     end
 end
 

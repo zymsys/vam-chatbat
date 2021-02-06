@@ -14,7 +14,32 @@ function autoTarget(faction, count)
         count = faction
         faction = nil
     end
+    if faction == 'r' then
+        targetRadius(count or 5) -- Not targeting a count, targeting a radius. Default it to 5'.
+        return
+    end
     targetFrom(VamChatBatUtil.actionNode(), faction, tonumber(count))
+end
+
+function targetRadius(radius)
+    if not Token.getDistanceBetween then
+        VamChatBatUtil.sendLocalChat("Upgrade to FGU 4.0.7 or newer to target by radius.")
+    end
+    radius = tonumber(radius)
+    local nSource = VamChatBatUtil.actionNode()
+    local tokenSource = CombatManager.getTokenFromCT(nSource)
+    clearTargetsForNode(nSource)
+    for _,nCT in pairs(CombatManager.getCombatantNodes()) do
+        local friendFoe = nCT.getChild('friendfoe').getText()
+        local bVisible = DB.getValue(nCT, "tokenvis", 0) == 1 or friendFoe == 'friend'
+        if bVisible then -- Never auto-target a hidden token
+            local tokenCT = CombatManager.getTokenFromCT(nCT)
+            local distance = Token.getDistanceBetween(tokenSource, tokenCT)
+            if distance <= radius then
+                TargetingManager.addCTTarget(nSource, nCT)
+            end
+        end
+    end
 end
 
 function targetFrom(targetFromNode, faction, count, nth)
@@ -90,10 +115,8 @@ function shouldTarget(node, faction)
     faction = factionNameMap[faction] or 'foe'
     local friendFoe = node.getChild('friendfoe').getText()
     if (friendFoe ~= 'friend') and (DB.getValue(node, "tokenvis", 0) == 0) then
-        --Debug.chat('Refusing to target a hidden non-friendly')
         return false -- Never auto-target a hidden token
     end
-    --Debug.chat(friendFoe, faction)
     return friendFoe == faction
 end
 
