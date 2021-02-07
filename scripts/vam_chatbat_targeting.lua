@@ -36,7 +36,6 @@ function targetRadius(radius)
     local nSource = VamChatBatUtil.actionNode()
     local tokenSource = CombatManager.getTokenFromCT(nSource)
     local aTargetCTNodes
-    clearTargetsForNode(nSource)
     for _,nCT in pairs(CombatManager.getCombatantNodes()) do
         local friendFoe = nCT.getChild('friendfoe').getText()
         local bVisible = DB.getValue(nCT, "tokenvis", 0) == 1 or friendFoe == 'friend'
@@ -118,7 +117,6 @@ function targetFrom(nSourceCT, sFaction, count, nth)
     if toTarget[1] == nil then
         VamChatBatUtil.sendLocalChat("No " .. sFaction .. " combatants found")
     else
-        clearTargetsForNode(nSourceCT)
         setTargetsForNode(nSourceCT, toTarget)
     end
     lastNth[sSourceNodeName] = nth
@@ -143,13 +141,18 @@ function shouldTarget(node, faction)
     return friendFoe == faction
 end
 
-function clearTargetsForNode(node)
-    local t = CombatManager.getTokenFromCT(node)
-    TargetingManager.clearCTTargets(node, t)
+function clearTargetsForNode(nCT)
+    if User.isHost() then
+        local t = CombatManager.getTokenFromCT(nCT)
+        TargetingManager.clearCTTargets(nCT, t)
+    else
+        VamChatBatComm.notifyClearTargets(nCT)
+    end
 end
 
 function setTargetsForNode(nSource, aTargetCTNodes)
     if User.isHost() then
+        clearTargets()
         for _,targetNode in pairs(aTargetCTNodes) do
             --Debug.chat('targeting', targetFromNode, targetNode)
             TargetingManager.addCTTarget(nSource, targetNode)
@@ -190,7 +193,6 @@ function restoreTargets()
         VamChatBatUtil.sendLocalChat("There is no active creature for targeting")
         return
     end
-    clearTargetsForNode(nSource)
     aTargets = {}
     for _,t in pairs(aMemorizedTargets) do
         local nTarget = DB.findNode(t['sCreatureNode'])
