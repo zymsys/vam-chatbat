@@ -1,5 +1,4 @@
 ### Bugs
-* Targets of the same distance don't both get included when cycling through targets
 * In ToA, Jaq didn't get +4 to hit or +2 damage with his crossbow. Weird.
 * In ToA, the stacked Bless didn't do anything
 

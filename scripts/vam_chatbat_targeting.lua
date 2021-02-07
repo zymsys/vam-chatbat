@@ -84,19 +84,29 @@ function targetFrom(nSourceCT, sFaction, count, nth)
     for _, targetNode in pairs(CombatManager.getCombatantNodes()) do
         if shouldTarget(targetNode, sFaction) then
             local nDistance = VamChatBatUtil.getDistance(targetFromToken, CombatManager.getTokenFromCT(targetNode))
-            aTargets[nDistance] = targetNode
+            if not aTargets[nDistance] then
+                aTargets[nDistance] = {}
+            end
+            table.insert(aTargets[nDistance], targetNode)
             nTargetCount = nTargetCount + 1
         end
     end
     local aDistances = {}
     for distance in pairs(aTargets) do table.insert(aDistances, distance) end
     table.sort(aDistances)
+    local aFlattened = {}
+    for _, distance in pairs(aDistances) do
+        local aTargetsForDistance = aTargets[distance]
+        for _, targetNode in pairs(aTargetsForDistance) do
+            table.insert(aFlattened, targetNode)
+        end
+    end
     local toTarget = {}
     while count > 0 do
         if nth > nTargetCount then
             nth = 1
         end
-        table.insert(toTarget, aTargets[aDistances[nth]])
+        table.insert(toTarget, aFlattened[nth])
         count = count - 1
         nth = nth + 1
     end
