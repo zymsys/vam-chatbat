@@ -35,15 +35,17 @@ function targetRadius(radius)
     radius = tonumber(radius)
     local nSource = VamChatBatUtil.actionNode()
     local tokenSource = CombatManager.getTokenFromCT(nSource)
-    local aTargetCTNodes
+    local aTargetCTNodes = {}
     for _,nCT in pairs(CombatManager.getCombatantNodes()) do
         local friendFoe = nCT.getChild('friendfoe').getText()
         local bVisible = DB.getValue(nCT, "tokenvis", 0) == 1 or friendFoe == 'friend'
         if bVisible then -- Never auto-target a hidden token
             local tokenCT = CombatManager.getTokenFromCT(nCT)
-            local distance = Token.getDistanceBetween(tokenSource, tokenCT)
-            if distance <= radius then
-                table.insert(aTargetCTNodes, nCT)
+            if tokenCT then
+                local distance = Token.getDistanceBetween(tokenSource, tokenCT)
+                if distance <= radius then
+                    table.insert(aTargetCTNodes, nCT)
+                end
             end
         end
     end
@@ -146,7 +148,8 @@ function clearTargetsForNode(nCT)
         local t = CombatManager.getTokenFromCT(nCT)
         TargetingManager.clearCTTargets(nCT, t)
     else
-        VamChatBatComm.notifyClearTargets(nCT)
+        setTargetsForNode(nCT, {})
+        --VamChatBatComm.notifyClearTargets(nCT)
     end
 end
 
