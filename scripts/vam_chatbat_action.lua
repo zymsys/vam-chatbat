@@ -10,9 +10,6 @@ function takeAction(aWords)
     end
 end
 
--- Mage Hand for example has a name but no actual actions.
--- Let's filter things that don't contain actions out of the list.
-
 function dumpAction(aWords)
     Debug.chat(findAction(aWords, getAvailableActions(VamChatBatUtil.actionNode())))
 end
