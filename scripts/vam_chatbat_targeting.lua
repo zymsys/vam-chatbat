@@ -84,6 +84,11 @@ function targetFrom(nSourceCT, sFaction, count, nth)
     for _, targetNode in pairs(CombatManager.getCombatantNodes()) do
         if shouldTarget(targetNode, sFaction) then
             local nDistance = VamChatBatUtil.getDistance(targetFromToken, CombatManager.getTokenFromCT(targetNode))
+
+            -- Lua doesn't define a max number, so we're using a really big number
+            -- to try and sort these after those that are on the map.
+            nDistance = nDistance or 99999999
+
             if not aTargets[nDistance] then
                 aTargets[nDistance] = {}
             end

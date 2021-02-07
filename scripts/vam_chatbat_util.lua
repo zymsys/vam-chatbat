@@ -1,4 +1,7 @@
 function getDistance(tSource, tTarget)
+    if not tTarget then -- The target creature is on the combat tracker but not on the map.
+        return nil
+    end
     if Token.getDistanceBetween then
         return Token.getDistanceBetween(tSource, tTarget)
     end
