@@ -1,7 +1,9 @@
-OOB_MSGTYPE_VAM_SETTARGETS = "vam_settargets";
+OOB_TYPE_VAM_SET_TARGETS = "vam_set_targets";
+OOB_TYPE_VAM_RESUME_PROCESSING = "vam_resume_processing";
 
 function onInit()
-    OOBManager.registerOOBMsgHandler(OOB_MSGTYPE_VAM_SETTARGETS, handleSetTargets);
+    OOBManager.registerOOBMsgHandler(OOB_TYPE_VAM_SET_TARGETS, handleSetTargets)
+    OOBManager.registerOOBMsgHandler(OOB_TYPE_VAM_RESUME_PROCESSING, handleResumeProcessing)
 end
 
 -- Call only as a player. GM can take these actions locally.
@@ -11,7 +13,7 @@ function notifySetTargets(nSourceCT, aTargetCTNodes)
         table.insert(aTargets, nTarget.getNodeName())
     end
     local msgOOB = {
-        type = OOB_MSGTYPE_VAM_SETTARGETS,
+        type = OOB_TYPE_VAM_SET_TARGETS,
         user = User.getUsername(),
         identity = User.getIdentityLabel(),
         sSource = nSourceCT.getNodeName(),
@@ -31,4 +33,17 @@ function handleSetTargets(msgOOB)
         table.insert(aTargetCTNodes, DB.findNode(sTargetNodeName))
     end
     VamChatBatTargeting.setTargetsForNode(nSourceCT, aTargetCTNodes)
+    notifyResumeProcessing(msgOOB.user)
+end
+
+function notifyResumeProcessing(sUsername)
+    Comm.deliverOOBMessage({
+        type = OOB_TYPE_VAM_RESUME_PROCESSING,
+        user=sUsername,
+        identity = User.getIdentityLabel(),
+    }, sUsername)
+end
+
+function handleResumeProcessing()
+    VamChatBat.processCommandStack()
 end

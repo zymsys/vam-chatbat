@@ -22,10 +22,9 @@ function autoTarget(faction, count)
         faction = nil
     end
     if faction == 'r' then
-        targetRadius(count or 5) -- Not targeting a count, targeting a radius. Default it to 5'.
-        return
+        return targetRadius(count or 5) -- Not targeting a count, targeting a radius. Default it to 5'.
     end
-    targetFrom(VamChatBatUtil.actionNode(), faction, tonumber(count))
+    return targetFrom(VamChatBatUtil.actionNode(), faction, tonumber(count))
 end
 
 function targetRadius(radius)
@@ -49,7 +48,7 @@ function targetRadius(radius)
             end
         end
     end
-    setTargetsForNode(nSource, aTargetCTNodes)
+    return setTargetsForNode(nSource, aTargetCTNodes)
 end
 
 function targetFrom(nSourceCT, sFaction, count, nth)
@@ -116,12 +115,14 @@ function targetFrom(nSourceCT, sFaction, count, nth)
         count = count - 1
         nth = nth + 1
     end
+    bShouldWait = false
     if toTarget[1] == nil then
         VamChatBatUtil.sendLocalChat("No " .. sFaction .. " combatants found")
     else
-        setTargetsForNode(nSourceCT, toTarget)
+        bShouldWait = setTargetsForNode(nSourceCT, toTarget)
     end
     lastNth[sSourceNodeName] = nth
+    return bShouldWait
 end
 
 function shouldTarget(node, faction)
@@ -148,8 +149,9 @@ function clearTargetsForNode(nCT)
     if User.isHost() then
         local t = CombatManager.getTokenFromCT(nCT)
         TargetingManager.clearCTTargets(nCT, t)
+        return false
     else
-        setTargetsForNode(nCT, {})
+        return setTargetsForNode(nCT, {})
     end
 end
 
@@ -159,8 +161,10 @@ function setTargetsForNode(nSource, aTargetCTNodes)
         for _,targetNode in pairs(aTargetCTNodes) do
             TargetingManager.addCTTarget(nSource, targetNode)
         end
+        return false
     else
         VamChatBatComm.notifySetTargets(nSource, aTargetCTNodes)
+        return true
     end
 end
 
@@ -168,9 +172,9 @@ function clearTargets()
     local nCT = VamChatBatUtil.actionNode()
     if not nCT then
         VamChatBatUtil.sendLocalChat("There is no active creature for targeting")
-        return
+        return false
     end
-    clearTargetsForNode(nCT)
+    return clearTargetsForNode(nCT)
 end
 
 function memorizeTargets()
@@ -192,12 +196,12 @@ function restoreTargets()
     local nSource = VamChatBatUtil.actionNode()
     if not nSource then
         VamChatBatUtil.sendLocalChat("There is no active creature for targeting")
-        return
+        return false
     end
     aTargets = {}
     for _,t in pairs(aMemorizedTargets) do
         local nTarget = DB.findNode(t['sCreatureNode'])
         table.insert(aTargets, nTarget)
     end
-    setTargetsForNode(nSource, aTargets)
+    return setTargetsForNode(nSource, aTargets)
 end

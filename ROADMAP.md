@@ -3,6 +3,8 @@
 
 ### Short Term Goals
 - Initiative rolls (all NPC for gm)
+- Exclusive radius selection which excludes the initiator. /cb xr
+- Invoke hotkey with ChatBat would allow stacking of hotkey actions. But I probably couldn't wait for async. Hmm.
 - Don't depend on 5e ruleset
 - Add a way to 'fave' something, so it appears at the top of the actions list
 - Sort the actions list by name

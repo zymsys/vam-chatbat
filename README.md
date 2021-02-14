@@ -49,3 +49,9 @@ To roll damage after using ChatBat to roll an attack, use `/cb d`. Note that thi
 
 You can stack commands by separating them with a comma. For example, to attack the nearest enemy with a dagger and then return targeting back to how it was when you started, you could use `/cb m,t,a Dagger (M),r`. What I'd really like to offer is including the damage command in there too, but I have some work to do before that works. I need to make damage conditional on a successful attack, and I need to make stacked commands wait for dice rolls.
 
+To bless your three closest allies, excluding yourself: `/cb m,t f 3,t f 3,a Bless,r`, which means:
+* `m`: Memorize current targeting
+* `t f 3`: Target three closest friends, including myself
+* `t f 3`: Target next three closest friends, which excludes myself
+* `a Bless`: Use the 'Bless' action
+* `r`: Restore initial targeting

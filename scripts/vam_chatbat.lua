@@ -1,13 +1,9 @@
--- How do I find the best actor to target from as a player?
--- From effect.lua:
---if User.isHost() then
---    rTarget = ActorManager.getActorFromCT(CombatManager.getActiveCT());
---else
---    rTarget = ActorManager.getActor("pc", CombatManager.getCTFromNode("charsheet." .. User.getCurrentIdentity()));
---end
-
 -- Another distance calculator:
 -- https://www.fantasygrounds.com/forums/showthread.php?65246-Experimental-APIs-for-FGU&p=574167&viewfull=1#post574167
+
+local aCommandStack = {}
+local bIsProcessing = false
+local bIsWaitingForAsync = false
 
 function onInit()
     Comm.registerSlashHandler("chatbat", processCommand);
@@ -25,13 +21,25 @@ function showHelp()
     VamChatBatUtil.sendLocalChat("/cb {action}, {action}, {etc}  ## Multiple actions are separated by a comma")
 end
 
+function processCommandStack()
+    bIsProcessing = true
+    bIsWaitingForAsync = false
+    while not bIsWaitingForAsync and #aCommandStack > 0 do
+        processNextChatBatCommand()
+    end
+    bIsProcessing = false
+end
+
 function processCommand(_, sParams)
     local aCommands = StringManager.split(sParams, ',', true)
     if #aCommands == 0 then
         showHelp()
     end
     for _, sCommand in pairs(aCommands) do
-        processChatBatCommand(sCommand)
+        pushChatBatCommand(sCommand)
+    end
+    if not bIsProcessing then
+        processCommandStack()
     end
 end
 
@@ -47,26 +55,54 @@ function bobo()
     end
 end
 
+function who()
+    local aCTNodes = VamChatBatUtil.getSortedCombatantListStartingFromActive()
+    for _, nCT in pairs(aCTNodes) do
+        local rActor = ActorManager.resolveActor(nCT)
+        local aDescription = { rActor.sName, rActor.sCTNode, rActor.sCreatureNode }
+        VamChatBatUtil.sendLocalChat(table.concat(aDescription, ', '))
+    end
+end
+
+function pushChatBatCommand(sCommand)
+    table.insert(aCommandStack, sCommand)
+end
+
+function processNextChatBatCommand()
+    local sCommand = aCommandStack[1]
+    if sCommand then
+        aCommandStack = {unpack(aCommandStack, 2)}
+        bIsWaitingForAsync = processChatBatCommand(sCommand)
+    end
+end
+
+-- Return true if the command requires us to wait on an async action. False (or nil) otherwise.
+-- Processing can be resumed by calling processCommandStack()
 function processChatBatCommand(sCommand)
     local aWords = StringManager.split(sCommand, ' ', true)
     if aWords[1] == 'a' then
-        VamChatBatAction.takeAction(aWords)
+        return VamChatBatAction.takeAction(aWords)
     elseif aWords[1] == 'd' then
-        VamChatBatAction.followUpDamage()
+        return VamChatBatAction.followUpDamage()
     elseif aWords[1] == 'm' then
-        VamChatBatTargeting.memorizeTargets()
+        return VamChatBatTargeting.memorizeTargets()
     elseif aWords[1] == 'r' then
-        VamChatBatTargeting.restoreTargets()
+        return VamChatBatTargeting.restoreTargets()
     elseif aWords[1] == 'c' then
-        VamChatBatTargeting.clearTargets()
+        return VamChatBatTargeting.clearTargets()
     elseif aWords[1] == 't' then
-        VamChatBatTargeting.autoTarget(aWords[2], aWords[3])
+        return VamChatBatTargeting.autoTarget(aWords[2], aWords[3])
+    -- Start Undocumented Commands
     elseif aWords[1] == 'dump' then
-        VamChatBatAction.dumpAction(aWords)
+        return VamChatBatAction.dumpAction(aWords)
+    elseif aWords[1] == 'who' then
+        return who()
     elseif aWords[1] == 'bobo' then
-        bobo()
+        return bobo()
+    -- End Undocumented Commands
     else
         VamChatBatUtil.sendLocalChat("Unknown command: " .. aWords[1])
         showHelp()
+        return false
     end
 end
