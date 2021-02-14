@@ -54,7 +54,7 @@ function actionSetFromWeapon(nCreature, nWeapon)
     return {
         sName = rAttackAction['label'] .. ' (' .. rAttackAction['range'] .. ')',
         rAttackAction = rAttackAction,
-        rDamageAction = CharWeaponManager.buildDamageAction(nodeChar, nWeapon),
+        rDamageAction = CharWeaponManager.buildDamageAction(nCreature, nWeapon),
     }
 end
 
@@ -68,7 +68,7 @@ function powerActionsForCreature(aPowers)
     return aAvailableActions
 end
 
-function weaponActionsForCreature(aWeapons)
+function weaponActionsForCreature(nCreature, aWeapons)
     local aAvailableActions = {}
     for _, nWeapon in pairs(aWeapons) do
         local rAction = actionSetFromWeapon(nCreature, nWeapon)
@@ -156,7 +156,7 @@ function getAvailableActions(nCT)
 
     -- Find different types of actions and normalize them into a consistent structure
     local aPowerActions = powerActionsForCreature(DB.getChildren(rCreatureNodes['powers']))
-    local aWeaponActions = weaponActionsForCreature(DB.getChildren(rCreatureNodes['weaponlist']))
+    local aWeaponActions = weaponActionsForCreature(nCreature, DB.getChildren(rCreatureNodes['weaponlist']))
     local aNPCActions = npcActionsForCreature(DB.getChildren(nCT, 'actions'))
     local aNPCSpells = npcSpellsForCreature(DB.getChildren(nCT, 'spells'))
 
