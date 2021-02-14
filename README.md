@@ -20,7 +20,7 @@ How to use it
 -------------
 From the chat window, type `/cb` (or `/chatbat`) to get quick help.
 
-If you are the GM, ChatBat will work with the combatant who's turn it is. If you are a player, ChatBat will work with your PC(s) only.
+If you are the GM, ChatBat will work with the combatant whose turn it is. If you are a player, ChatBat will work from your character whose turn is coming up next. Players who control only one character always control that character.
 
 ###Targeting
 To auto-target type `/cb t`. If you are targeting from a 'friendly' or 'neutral' faction it will target the nearest 'hostile' combatant. If you are targeting from a 'hostile' combatant it will target the nearest 'friendly' combatant. Entering `/cb t` again will target the next nearest combatant, eventually cycling back to the nearest.

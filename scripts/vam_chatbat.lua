@@ -38,18 +38,13 @@ end
 -- This is a secret command that is used during development to just hold some code
 -- and execute it to see what it does. It is not intended for end user consumption.
 function bobo()
-    local nCT = VamChatBatUtil.actionNode()
-    local rActor = ActorManager.resolveActor(nCT)
-    local rAction = {
-        nEnd = 55,
-        magic = TRUE,
-        label = 'Light - cantrip (at will)',
-        sType = 'powersave',
-        save = 'dexterity',
-        savemod = 0,
-        nStart = 28
-    }
-    ActionPower.performSaveVsRoll(nil, rActor, rAction)
+    -- Building a function that gets a sorted list of combatants that starts with the active
+    -- and loops back around.
+    local a = VamChatBatUtil.getSortedCombatantListStartingFromActive()
+    for _,v in pairs(a) do
+        local rActor = ActorManager.resolveActor(v)
+        Debug.chat('name', rActor.sName)
+    end
 end
 
 function processChatBatCommand(sCommand)

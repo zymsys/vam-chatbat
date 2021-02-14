@@ -1,5 +1,4 @@
 ### Bugs
-- Players who control more than one character can only use ChatBat with the first one. Need to have it support multiple PCs.
 - In ToA, Jaq didn't get +4 to hit or +2 damage with his crossbow. Weird.
 - In ToA, the stacked Bless didn't do anything
 

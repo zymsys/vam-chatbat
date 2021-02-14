@@ -144,20 +144,19 @@ function shouldTarget(node, faction)
 end
 
 function clearTargetsForNode(nCT)
+    lastNth[nCT.getNodeName()] = 1
     if User.isHost() then
         local t = CombatManager.getTokenFromCT(nCT)
         TargetingManager.clearCTTargets(nCT, t)
     else
         setTargetsForNode(nCT, {})
-        --VamChatBatComm.notifyClearTargets(nCT)
     end
 end
 
 function setTargetsForNode(nSource, aTargetCTNodes)
     if User.isHost() then
-        clearTargets()
+        clearTargetsForNode(nSource)
         for _,targetNode in pairs(aTargetCTNodes) do
-            --Debug.chat('targeting', targetFromNode, targetNode)
             TargetingManager.addCTTarget(nSource, targetNode)
         end
     else
@@ -172,7 +171,6 @@ function clearTargets()
         return
     end
     clearTargetsForNode(nCT)
-    lastNth[nCT.getNodeName()] = 1
 end
 
 function memorizeTargets()

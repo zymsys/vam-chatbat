@@ -45,13 +45,52 @@ function arrayFilter(t,fn)
     return r
 end
 
+function getSortedCombatantListStartingFromActive()
+    local aCombatants = CombatManager.getSortedCombatantList()
+    local nActiveCT = CombatManager.getActiveCT()
+    if not nActiveCT then
+        return aCombatants
+    end
+    local sActiveCTNodeName = nActiveCT.getNodeName()
+    local aCombatantsFromActive = {}
+    local bActiveFound = false
+    for _, nCT in pairs(aCombatants) do
+        if nCT.getNodeName() == sActiveCTNodeName then
+            bActiveFound = true
+        end
+        if bActiveFound then
+            table.insert(aCombatantsFromActive, nCT)
+        end
+    end
+    for _, nCT in pairs(aCombatants) do
+        if nCT.getNodeName() == sActiveCTNodeName then
+            return aCombatantsFromActive
+        end
+        table.insert(aCombatantsFromActive, nCT)
+    end
+    -- If we reach here it means that the active node in the combat tracker is not
+    -- in the combat tracker. Should never happen, but ¯\_(ツ)_/¯
+    return aCombatants
+end
+
 -- Determine which node to act upon
 function actionNode()
     if User.isHost() then
         return CombatManager.getActiveCT()
-    else
-        return CombatManager.getCTFromNode("charsheet." .. User.getCurrentIdentity())
     end
+    local aIdentityStrings = User.getActiveIdentities()
+    local aCombatants = getSortedCombatantListStartingFromActive()
+    for _, nCT in pairs(aCombatants) do
+        local rActor = ActorManager.resolveActor(nCT)
+        for _, sCharacterId in pairs(aIdentityStrings) do
+            local sCharSheetNodeName = 'charsheet.' .. sCharacterId
+            if sCharSheetNodeName == rActor.sCreatureNode then
+                return nCT
+            end
+        end
+    end
+    -- If we don't own anything on the combat tracker, return nil
+    return nil
 end
 
 function sendLocalChat(msg)
